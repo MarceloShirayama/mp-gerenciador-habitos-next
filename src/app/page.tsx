@@ -1,6 +1,13 @@
 import Image from "next/image";
 import { DayState } from "./component/day-state";
 import Link from "next/link";
+import { kv } from "@vercel/kv";
+import { deleteHabit } from "./actions";
+import { DeleteHabitButton } from "./component/delete-habit-button";
+
+export type Habits = {
+  [habit: string]: Record<string, boolean>;
+} | null;
 
 const today = new Date();
 const todayWeekDay = today.getDay() + 1;
@@ -9,19 +16,17 @@ const sortedWeekDays = daysOfWeek
   .slice(todayWeekDay)
   .concat(daysOfWeek.slice(0, todayWeekDay));
 
-export default function Home() {
-  const habits = {
-    "beber água": {
-      "2023-07-30": true,
-      "2023-07-31": false,
-      "2023-08-01": false,
-    },
-    "estudar programação": {
-      "2023-07-30": true,
-      "2023-07-31": false,
-      "2023-08-01": false,
-    },
-  };
+const last7Days = daysOfWeek
+  .map((_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - index);
+
+    return date.toISOString().slice(0, 10);
+  })
+  .reverse();
+
+export default async function Home() {
+  const habits: Habits = await kv.hgetall("habits");
 
   return (
     <main className="container relative flex flex-col gap-8 px-4 pt-16">
@@ -36,20 +41,13 @@ export default function Home() {
               <div key={habit} className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-light text-white font-sans">
-                    {habit}
+                    <Link href={`habit/${habit}`}>{habit}</Link>
                   </span>
-                  <button>
-                    <Image
-                      src="/images/trash.svg"
-                      width={20}
-                      height={20}
-                      alt="ícone de lixeira vermelha"
-                    />
-                  </button>
+                  <DeleteHabitButton habit={habit} />
                 </div>
 
                 <div className="grid grid-cols-7 bg-neutral-800 rounded-md p-2">
-                  {sortedWeekDays.map((dayOfWeek) => (
+                  {sortedWeekDays.map((dayOfWeek, index) => (
                     <div
                       key={dayOfWeek}
                       className="flex flex-col last:font-bold"
@@ -57,7 +55,7 @@ export default function Home() {
                       <span className="font-sans text-xs text-white text-center">
                         {dayOfWeek}
                       </span>
-                      <DayState day={false} />
+                      <DayState day={habitsStreak[last7Days[index]]} />
                     </div>
                   ))}
                 </div>

@@ -1,10 +1,10 @@
 import Image from "next/image";
 
-type Props = {
+export type DayStateProps = {
   day?: boolean;
 };
 
-export function DayState({ day }: Props) {
+export function DayState({ day }: DayStateProps) {
   let image: [string, string, number?] = [
     "/images/gray-mark.svg",
     "gray elipse icon",
